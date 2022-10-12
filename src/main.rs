@@ -4,6 +4,7 @@ use log::{error, info};
 use plotly::common::Mode;
 use plotly::common::Title;
 use plotly::layout::Axis;
+use plotly::layout::Legend;
 use plotly::{Layout, Plot, Scatter};
 
 use std::path::PathBuf; // for BAM_F*
@@ -62,12 +63,17 @@ fn main() {
 
     let mut plot = Plot::new();
     for (index, (blocks, name)) in blocks_per_bam.zip(args.input).enumerate() {
+        let trace_name = name.file_stem().unwrap().to_str().unwrap();
+        let mut show_legend = true;
         for (begin, end) in blocks {
             let trace1 = Scatter::new(vec![begin, end], vec![index, index])
                 .mode(Mode::Lines)
-                .name(name.file_name().unwrap().to_str().unwrap());
+                .name(trace_name)
+                .legend_group(trace_name)
+                .show_legend(show_legend);
 
-            plot.add_trace(trace1)
+            plot.add_trace(trace1);
+            show_legend = false;
         }
     }
     plot.set_layout(
@@ -81,7 +87,8 @@ fn main() {
                     .show_tick_labels(false)
                     .show_spikes(false),
             )
-            .height(1000),
+            .height(1000)
+            .legend(Legend::new().trace_group_gap(0)),
     );
     plot.write_html(args.output);
 }
