@@ -1,0 +1,15 @@
+[package]
+name = "phasius"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clap = { version = "3.2.6", features = ["derive"] }
+env_logger = "0.9.1"
+log = "0.4.17"
+plotly = "0.8.1"
+rust-htslib = "0.39.5"
+unzip-n = "0.1.2"
+
