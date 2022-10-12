@@ -6,8 +6,7 @@ use plotly::common::Title;
 use plotly::layout::Axis;
 use plotly::layout::Legend;
 use plotly::{Layout, Plot, Scatter};
-
-use std::path::PathBuf; // for BAM_F*
+use std::path::PathBuf;
 
 pub mod extract_from_bam;
 pub mod utils;
