@@ -1,13 +1,13 @@
 use clap::AppSettings::DeriveDisplayOrder;
 use clap::Parser;
-use log::{error, info};
-use plotly::common::Mode;
+use log::info;
 use plotly::common::Title;
-use plotly::layout::Axis;
-use plotly::layout::Legend;
-use plotly::{Layout, Plot, Scatter};
+use plotly::layout::{Axis, Legend};
+use plotly::{Layout, Plot};
+use rayon::prelude::*;
 use std::path::PathBuf;
 
+pub mod annot;
 pub mod extract_from_bam;
 pub mod utils;
 
@@ -20,6 +20,10 @@ struct Cli {
     // this validator gets applied to each element from the Vec separately
     #[clap(parse(from_os_str), multiple_values = true, required = true, validator=is_file)]
     input: Vec<PathBuf>,
+
+    /// bed file annotation to use (bgzipped and tabix indexed)
+    #[clap(short, long, parse(from_os_str), validator=is_file)]
+    bed: Option<PathBuf>,
 
     /// Number of parallel decompression threads to use
     #[clap(short, long, value_parser, default_value_t = 4)]
@@ -46,33 +50,48 @@ fn is_file(pathname: &str) -> Result<(), String> {
 fn main() {
     env_logger::init();
     let args = Cli::parse();
-    let target = match utils::process_region(&args.region) {
-        Ok(reg) => reg,
-        Err(e) => {
-            error!("Improper interval {}\n{}", args.region, e);
-            panic!();
-        }
-    };
+    let target = utils::process_region(&args.region).expect("Error: Improper interval!");
+
     info!("Collected arguments");
     let input = args.input.clone();
-    let blocks_per_bam = input.iter().map(|b| {
-        extract_from_bam::blocks_from_bam(b, args.threads, &target)
-            .expect("Failure when parsing region from file.")
-    });
+    rayon::ThreadPoolBuilder::new()
+        .num_threads(args.threads)
+        .build()
+        .unwrap();
+    let blocks_per_bam: Vec<Vec<extract_from_bam::Blocks>> = input
+        .into_par_iter()
+        .map(|b| {
+            extract_from_bam::blocks_from_bam(&b, args.threads, &target)
+                .expect("Failure when parsing region from bam file.")
+        })
+        .collect();
 
     let mut plot = Plot::new();
-    for (index, (blocks, name)) in blocks_per_bam.zip(args.input).enumerate() {
-        let trace_name = name.file_stem().unwrap().to_str().unwrap();
+    let default_colors = vec![
+        "#1f77b4", // muted blue
+        "#ff7f0e", // safety orange
+        "#2ca02c", // cooked asparagus green
+        "#d62728", // brick red
+        "#9467bd", // muted purple
+        "#8c564b", // chestnut brown
+        "#e377c2", // raspberry yogurt pink
+        "#7f7f7f", // middle gray
+        "#bcbd22", // curry yellow-green
+        "#17becf", // blue-teal
+    ];
+    for (height, blocks) in blocks_per_bam.iter().enumerate() {
         let mut show_legend = true;
-        for (begin, end) in blocks {
-            let trace1 = Scatter::new(vec![begin, end], vec![index, index])
-                .mode(Mode::Lines)
-                .name(trace_name)
-                .legend_group(trace_name)
-                .show_legend(show_legend);
-
-            plot.add_trace(trace1);
+        for (block, color) in blocks.iter().zip(default_colors.iter().cycle()) {
+            plot.add_trace(block.plot(height, color.to_string(), show_legend));
             show_legend = false;
+        }
+    }
+    if let Some(p) = args.bed {
+        for annot_interval in annot::parse_bed(p, &target)
+            .expect("Failure when parsing annotation from bed file")
+            .into_iter()
+        {
+            plot.add_trace(annot_interval.plot())
         }
     }
     plot.set_layout(
