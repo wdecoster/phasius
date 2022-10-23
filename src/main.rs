@@ -25,9 +25,13 @@ struct Cli {
     #[clap(short, long, parse(from_os_str), validator=is_file)]
     bed: Option<PathBuf>,
 
-    /// Number of parallel decompression threads to use
+    /// Number of crams/bams to parse in parallel
     #[clap(short, long, value_parser, default_value_t = 4)]
     threads: usize,
+
+    /// Number of decompression threads to use per cram/bam
+    #[clap(short, long, value_parser, default_value_t = 1)]
+    decompression: usize,
 
     /// HTML output file name
     #[clap(short, long, value_parser)]
@@ -61,7 +65,7 @@ fn main() {
     let blocks_per_bam: Vec<Vec<extract_from_bam::Blocks>> = input
         .into_par_iter()
         .map(|b| {
-            extract_from_bam::blocks_from_bam(&b, args.threads, &target)
+            extract_from_bam::blocks_from_bam(&b, args.decompression, &target)
                 .expect("Failure when parsing region from bam file.")
         })
         .collect();
