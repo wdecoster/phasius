@@ -1,4 +1,5 @@
 use bam::ext::BamRecordExtensions;
+use log::error;
 use plotly::common::{Marker, Mode};
 use plotly::Scatter;
 use rust_htslib::bam::record::Aux;
@@ -47,9 +48,16 @@ pub fn blocks_from_bam(
         .map(|r| r.expect("Failure parsing Bam file"))
         .filter(|read| read.flags() & (htslib::BAM_FUNMAP | htslib::BAM_FSECONDARY) as u16 == 0)
         .map(|read| (read.pos(), read.reference_end(), get_phaseset(&read)))
-        .filter(|(_, _, p)| p.is_some());
+        .filter(|(_, _, p)| p.is_some())
+        .peekable();
+    if phased_reads_iter.peek().is_none() {
+        error!("Not a single phased read found in {}!", bamp.display());
+        panic!();
+    }
     let mut phaseblocks = vec![];
-    let (mut start1, mut block_end, mut phaseset1) = phased_reads_iter.next().unwrap();
+    let (mut start1, mut block_end, mut phaseset1) = phased_reads_iter
+        .next()
+        .expect("Not a single phased read found!");
     let name = bamp.file_stem().unwrap().to_str().unwrap().to_string();
     for (start, end, phaseset) in phased_reads_iter {
         if phaseset == phaseset1 {

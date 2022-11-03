@@ -14,3 +14,5 @@ rayon = "1.5.3"
 rust-htslib = "0.39.5"
 unzip-n = "0.1.2"
 
+[dev-dependencies]
+ctor = "0.1.26"

@@ -270,6 +270,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "ctor"
+version = "0.1.26"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6d2301688392eb071b0bf1a37be05c469d3cc4dbbd95df672fe28ab021e6a096"
+dependencies = [
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "curl-sys"
 version = "0.4.56+curl-7.83.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -798,6 +808,7 @@ name = "phasius"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "ctor",
  "env_logger",
  "log",
  "plotly",
