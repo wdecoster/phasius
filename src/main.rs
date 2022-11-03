@@ -54,9 +54,17 @@ fn is_file(pathname: &str) -> Result<(), String> {
 fn main() {
     env_logger::init();
     let args = Cli::parse();
-    let target = utils::process_region(&args.region).expect("Error: Improper interval!");
-
     info!("Collected arguments");
+    run_phasius(args);
+}
+
+fn run_phasius(args: Cli) {
+    let target = utils::process_region(&args.region).expect("Error: Improper interval!");
+    let blocks_per_bam = extract_blocks(&args, &target);
+    plot_blocks(blocks_per_bam, args, target);
+}
+
+fn extract_blocks(args: &Cli, target: &utils::Reg) -> Vec<Vec<extract_from_bam::Blocks>> {
     let input = args.input.clone();
     rayon::ThreadPoolBuilder::new()
         .num_threads(args.threads)
@@ -65,11 +73,14 @@ fn main() {
     let blocks_per_bam: Vec<Vec<extract_from_bam::Blocks>> = input
         .into_par_iter()
         .map(|b| {
-            extract_from_bam::blocks_from_bam(&b, args.decompression, &target)
+            extract_from_bam::blocks_from_bam(&b, args.decompression, target)
                 .expect("Failure when parsing region from bam file.")
         })
         .collect();
+    blocks_per_bam
+}
 
+fn plot_blocks(blocks_per_bam: Vec<Vec<extract_from_bam::Blocks>>, args: Cli, target: utils::Reg) {
     let mut plot = Plot::new();
     let default_colors = vec![
         "#1f77b4", // muted blue
@@ -113,4 +124,51 @@ fn main() {
             .legend(Legend::new().trace_group_gap(0)),
     );
     plot.write_html(args.output);
+}
+
+#[cfg(test)]
+#[ctor::ctor]
+fn init() {
+    env_logger::init();
+}
+
+#[test]
+fn verify_app() {
+    use clap::CommandFactory;
+    Cli::command().debug_assert()
+}
+
+#[test]
+fn run() {
+    let test_cli = Cli {
+        input: vec![
+            PathBuf::from("test-data/small-test-phased.bam"),
+            PathBuf::from("test-data/small-test-phased.bam"),
+            PathBuf::from("test-data/small-test-phased.bam"),
+        ],
+        bed: None,
+        threads: 2,
+        decompression: 1,
+        output: "test.html".to_string(),
+        region: "chr7:152743763-156779243".to_string(),
+    };
+    run_phasius(test_cli);
+}
+
+#[test]
+fn run_with_commas() {
+    let test_cli = Cli {
+        input: vec![
+            PathBuf::from("test-data/small-test-phased.bam"),
+            PathBuf::from("test-data/small-test-phased.bam"),
+            PathBuf::from("test-data/small-test-phased.bam"),
+            PathBuf::from("test-data/small-test-phased.bam"),
+        ],
+        bed: None,
+        threads: 2,
+        decompression: 1,
+        output: "test.html".to_string(),
+        region: "chr7:152,743,763-156,779,243".to_string(),
+    };
+    run_phasius(test_cli);
 }

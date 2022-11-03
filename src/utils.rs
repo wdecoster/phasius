@@ -6,6 +6,7 @@ pub struct Reg {
 
 /// parse a region string
 pub fn process_region(reg: &str) -> Result<Reg, Box<dyn std::error::Error>> {
+    let reg = reg.replace(',', "");
     let chrom = reg.split(':').collect::<Vec<&str>>()[0];
     let interval = reg.split(':').collect::<Vec<&str>>()[1];
     let start: u32 = interval.split('-').collect::<Vec<&str>>()[0].parse()?;
