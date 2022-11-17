@@ -24,3 +24,6 @@ unzip-n = "0.1.2"
 
 [dev-dependencies]
 ctor = "0.1.26"
+
+[profile.release]
+strip = true  # Automatically strip symbols from the binary.
