@@ -2,6 +2,14 @@
 name = "phasius"
 version = "0.1.0"
 edition = "2021"
+authors = ["Wouter De Coster decosterwouter@gmail.com"]
+license = "MIT"
+description = "A tool to visualize phase block structure from many bam/cram files"
+readme = "README.md"
+homepage = "https://github.com/wdecoster/phasius"
+repository = "https://github.com/wdecoster/phasius"
+keywords = ["ont", "pacbio", "cram", "bam", "alignment", "phasing"]
+categories = ["command-line-utilities", "science"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
