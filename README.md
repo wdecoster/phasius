@@ -13,3 +13,6 @@ Or build with cargo: `cargo install phasius`
 ## Example
 
 !["example plot"](example/20221117221044.png)  
+
+
+A dynamic example can be found [here](http://phasius.bioinf.be/phasius-example.html)
