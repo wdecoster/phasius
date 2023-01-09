@@ -1,3 +1,3 @@
 # phasius
 
-[Dynamic example ](https://wdecoster.github.io/phasius/phasius-example.html)
+[Dynamic example](http://phasius.bioinf.be/phasius-example.html)
