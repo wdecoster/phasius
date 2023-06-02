@@ -14,5 +14,8 @@ Or build with cargo: `cargo install phasius`
 
 !["example plot"](example/20221117221044.png)  
 
-
 A dynamic example can be found [here](http://phasius.bioinf.be/phasius-example.html)
+
+## CITATION
+
+If you use this tool, please consider citing our [publication](https://academic.oup.com/bioinformatics/article/39/5/btad311/7160911).
