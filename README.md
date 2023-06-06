@@ -4,7 +4,9 @@ A tool to visualize phase block structure from (many) BAM or CRAM files together
 
 ## Installation
 
-Download binaries from [releases](https://github.com/wdecoster/phasius/releases).
+Download a suitable binary from [releases](https://github.com/wdecoster/phasius/releases).
+
+Install from [bioconda](https://bioconda.github.io/recipes/phasius/README.html): `conda install phasius`
 
 Or build with cargo: `cargo install phasius`
 
