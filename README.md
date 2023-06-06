@@ -10,6 +10,23 @@ Or build with cargo: `cargo install phasius`
 
 ## Usage
 
+```text
+USAGE:
+    phasius [OPTIONS] --output <OUTPUT> --region <REGION> <INPUT>...
+
+ARGS:
+    <INPUT>...    cram or bam files to check
+
+OPTIONS:
+    -r, --region <REGION>       region string to plot phase blocks from [required]
+    -b, --bed <BED>             bed file annotation to use (bgzipped and tabix indexed)
+    -t, --threads <THREADS>     Number of crams/bams to parse in parallel [default: 4]
+    -d, --decompression <N>     Number of decompression threads to use per cram/bam [default: 1]
+    -o, --output <OUTPUT>       HTML output file name
+    -h, --help                  Print help information
+    -V, --version               Print version information
+```
+
 ## Example
 
 !["example plot"](example/20221117221044.png)  
