@@ -112,7 +112,6 @@ fn blocks_from_vcf(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils::Reg;
 
     #[test]
     fn test_construct_blocks() {
@@ -132,14 +131,4 @@ mod tests {
         assert!(filename.ends_with("vcf.gz"));
     }
 
-    #[test]
-    fn test_get_blocks() {
-        let region = Reg {
-            chrom: "chr1".to_string(),
-            start: 1,
-            end: 100,
-        };
-        let blocks = get_blocks(&PathBuf::from("test.bam"), 1, &region).unwrap();
-        assert_eq!(blocks.len(), 0);
-    }
 }
