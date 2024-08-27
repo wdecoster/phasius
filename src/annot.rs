@@ -17,7 +17,7 @@ impl Annot {
         match self.name {
             Some(s) => Scatter::new(vec![self.begin, self.end], vec![-2, -2])
                 .mode(Mode::Lines)
-                .name(&s)
+                .name(s)
                 .show_legend(false)
                 .line(Line::new().color(Rgb::new(128, 128, 128)).width(3.0)),
             None => Scatter::new(vec![self.begin, self.end], vec![-2, -2])
@@ -33,7 +33,7 @@ pub fn parse_bed(
     region: &crate::utils::Reg,
 ) -> Result<Vec<Annot>, Box<dyn std::error::Error>> {
     let mut annotation: Vec<Annot> = vec![];
-    let mut tbx_reader = tbx::Reader::from_path(&p)?;
+    let mut tbx_reader = tbx::Reader::from_path(p)?;
     let tid = tbx_reader.tid(&region.chrom)?;
     tbx_reader.fetch(tid, region.start.into(), region.end.into())?;
 
