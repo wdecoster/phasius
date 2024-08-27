@@ -1,6 +1,6 @@
 [package]
 name = "phasius"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["Wouter De Coster decosterwouter@gmail.com"]
 license = "MIT"
@@ -15,15 +15,15 @@ categories = ["command-line-utilities", "science"]
 
 [dependencies]
 clap = { version = "3.2.6", features = ["derive"] }
-env_logger = "0.9.1"
+env_logger = "0.11.5"
 log = "0.4.17"
-plotly = "0.8.1"
+plotly = "0.9.0"
 rayon = "1.5.3"
-rust-htslib = "0.39.5"
+rust-htslib = "0.47.0"
 unzip-n = "0.1.2"
 
 [dev-dependencies]
-ctor = "0.1.26"
+ctor = "0.2.8"
 
 [profile.release]
 strip = true  # Automatically strip symbols from the binary.

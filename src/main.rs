@@ -1,15 +1,15 @@
 use clap::AppSettings::DeriveDisplayOrder;
 use clap::Parser;
 use log::info;
-use plotly::common::Title;
 use plotly::layout::{Axis, Legend};
 use plotly::{Layout, Plot};
 use rayon::prelude::*;
 use std::path::PathBuf;
 
 pub mod annot;
-pub mod extract_from_bam;
+pub mod extract;
 pub mod utils;
+pub mod blocks;
 
 // The arguments end up in the Cli struct
 #[derive(Parser, Debug)]
@@ -64,26 +64,25 @@ fn run_phasius(args: Cli) {
     plot_blocks(blocks_per_bam, args, target);
 }
 
-fn extract_blocks(args: &Cli, target: &utils::Reg) -> Vec<Vec<extract_from_bam::Blocks>> {
+fn extract_blocks(args: &Cli, target: &utils::Reg) -> Vec<Vec<blocks::Blocks>> {
     let input = args.input.clone();
     rayon::ThreadPoolBuilder::new()
         .num_threads(args.threads)
         .build()
         .unwrap();
-    let blocks_per_bam: Vec<Vec<extract_from_bam::Blocks>> = input
+    let blocks_per_bam: Vec<Vec<blocks::Blocks>> = input
         .into_par_iter()
         .map(|b| {
-            extract_from_bam::blocks_from_bam(&b, args.decompression, target)
+            extract::get_blocks(&b, args.decompression, target)
                 .expect("Failure when parsing region from bam file.")
         })
         .collect();
     blocks_per_bam
 }
 
-fn plot_blocks(blocks_per_bam: Vec<Vec<extract_from_bam::Blocks>>, args: Cli, target: utils::Reg) {
+fn plot_blocks(blocks_per_bam: Vec<Vec<blocks::Blocks>>, args: Cli, target: utils::Reg) {
     let mut plot = Plot::new();
-    let default_colors = vec![
-        "#1f77b4", // muted blue
+    let default_colors = ["#1f77b4", // muted blue
         "#ff7f0e", // safety orange
         "#2ca02c", // cooked asparagus green
         "#d62728", // brick red
@@ -92,8 +91,7 @@ fn plot_blocks(blocks_per_bam: Vec<Vec<extract_from_bam::Blocks>>, args: Cli, ta
         "#e377c2", // raspberry yogurt pink
         "#7f7f7f", // middle gray
         "#bcbd22", // curry yellow-green
-        "#17becf", // blue-teal
-    ];
+        "#17becf"];
     for (height, blocks) in blocks_per_bam.iter().enumerate() {
         let mut show_legend = true;
         for (block, color) in blocks.iter().zip(default_colors.iter().cycle()) {
@@ -111,11 +109,11 @@ fn plot_blocks(blocks_per_bam: Vec<Vec<extract_from_bam::Blocks>>, args: Cli, ta
     }
     plot.set_layout(
         Layout::new()
-            .title(Title::new(&format!("Phase block map {}", args.region)))
+            .title(format!("Phase block map {}", args.region))
             .y_axis(
                 Axis::new()
                     .show_line(false)
-                    .title("Individuals".into())
+                    .title("Individuals".to_string())
                     .show_grid(false)
                     .show_tick_labels(false)
                     .show_spikes(false),

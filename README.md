@@ -1,6 +1,6 @@
 # PHASIUS
 
-A tool to visualize phase block structure from (many) BAM or CRAM files together with BED annotation
+A tool to visualize phase block structure from (many) BAM, CRAM or VCF files together with BED annotation
 
 ## Installation
 
@@ -17,7 +17,7 @@ USAGE:
     phasius [OPTIONS] --output <OUTPUT> --region <REGION> <INPUT>...
 
 ARGS:
-    <INPUT>...    cram or bam files to check
+    <INPUT>...    cram, bam or vcf files to check
 
 OPTIONS:
     -r, --region <REGION>       region string to plot phase blocks from [required]
