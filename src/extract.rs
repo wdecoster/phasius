@@ -83,6 +83,7 @@ fn get_phaseset(record: &bam::Record) -> Option<u32> {
             Aux::U8(v) => Some(u32::from(v)),
             Aux::U16(v) => Some(u32::from(v)),
             Aux::U32(v) => Some(v),
+            Aux::I32(v) => Some(v as u32),
             _ => panic!("Unexpected type of Aux {:?}", value),
         },
         Err(_e) => None,
