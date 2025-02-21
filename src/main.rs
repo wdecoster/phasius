@@ -40,6 +40,10 @@ struct Cli {
     /// region string to plot phase blocks from
     #[clap(short, long, value_parser)]
     region: String,
+
+    /// line width
+    #[clap(short, long, value_parser)]
+    width: Option<usize>
 }
 
 fn is_file(pathname: &str) -> Result<(), String> {
@@ -95,7 +99,7 @@ fn plot_blocks(blocks_per_bam: Vec<Vec<blocks::Blocks>>, args: Cli, target: util
     for (height, blocks) in blocks_per_bam.iter().enumerate() {
         let mut show_legend = true;
         for (block, color) in blocks.iter().zip(default_colors.iter().cycle()) {
-            plot.add_trace(block.plot(height, color.to_string(), show_legend));
+            plot.add_trace(block.plot(height, color.to_string(), show_legend, args.width));
             show_legend = false;
         }
     }
@@ -149,6 +153,25 @@ fn run() {
         decompression: 1,
         output: "test.html".to_string(),
         region: "chr7:152743763-156779243".to_string(),
+        width: None,
+    };
+    run_phasius(test_cli);
+}
+
+#[test]
+fn run_with_width() {
+    let test_cli = Cli {
+        input: vec![
+            PathBuf::from("test-data/small-test-phased.bam"),
+            PathBuf::from("test-data/small-test-phased.bam"),
+            PathBuf::from("test-data/small-test-phased.bam"),
+        ],
+        bed: None,
+        threads: 2,
+        decompression: 1,
+        output: "test.html".to_string(),
+        region: "chr7:152743763-156779243".to_string(),
+        width: Some(4),
     };
     run_phasius(test_cli);
 }
@@ -167,6 +190,7 @@ fn run_with_commas() {
         decompression: 1,
         output: "test.html".to_string(),
         region: "chr7:152,743,763-156,779,243".to_string(),
+        width: None
     };
     run_phasius(test_cli);
 }
