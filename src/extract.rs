@@ -28,7 +28,7 @@ fn construct_blocks<I>(mut phased_records: I, name: String) -> Vec<Blocks>
     let mut phaseblocks = vec![];
     let (mut start1, mut block_end, mut phaseset1) = phased_records
         .next()
-        .expect("Not a single phased record found!");
+        .expect(&format!("Not a single phased record found in the interval for {}!", name));
     for (start, end, phaseset) in phased_records {
         if phaseset == phaseset1 {
             block_end = end;

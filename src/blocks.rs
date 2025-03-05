@@ -14,10 +14,18 @@ impl Blocks {
         color: String,
         show_legend: bool,
         width: Option<usize>,
+        limits: Option<(u32, u32)>,
     ) -> Box<plotly::Scatter<i64, usize>> {
+        // with limits, the start of the plot cannot be less than the lower limit
+        // and the end of the plot cannot be greater than the upper limit
+        let (start, end) = if let Some((lower, upper)) = limits {
+            (self.start.max(lower as i64), self.end.min(upper as i64))
+        } else {
+            (self.start, self.end)
+        };
         match width {
             Some(width) => {
-        Scatter::new(vec![self.start, self.end], vec![height, height])
+        Scatter::new(vec![start, end], vec![height, height])
             .mode(Mode::Lines)
             .name(&self.name)
             .legend_group(&self.name)
@@ -26,7 +34,7 @@ impl Blocks {
             .marker(Marker::new().color(color))
             },
             None => {
-        Scatter::new(vec![self.start, self.end], vec![height, height])
+        Scatter::new(vec![start, end], vec![height, height])
             .mode(Mode::Lines)
             .name(&self.name)
             .legend_group(&self.name)

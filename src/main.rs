@@ -10,6 +10,7 @@ pub mod annot;
 pub mod extract;
 pub mod utils;
 pub mod blocks;
+pub mod summary;
 
 // The arguments end up in the Cli struct
 #[derive(Parser, Debug)]
@@ -43,7 +44,15 @@ struct Cli {
 
     /// line width
     #[clap(short, long, value_parser)]
-    width: Option<usize>
+    width: Option<usize>,
+
+    /// summary file
+    #[clap(long, value_parser)]
+    summary: Option<String>,
+
+    /// strictly plot the begin and end of the specified interval, not the whole interval gathered from blocks
+    #[clap(long, default_value_t = false)]
+    strict: bool,
 }
 
 fn is_file(pathname: &str) -> Result<(), String> {
@@ -65,7 +74,12 @@ fn main() {
 fn run_phasius(args: Cli) {
     let target = utils::process_region(&args.region).expect("Error: Improper interval!");
     let blocks_per_bam = extract_blocks(&args, &target);
-    plot_blocks(blocks_per_bam, args, target);
+    plot_blocks(&blocks_per_bam, &args, target);
+    if let Some(summary) = args.summary {
+        let summary_per_sample = summary::summarize(&blocks_per_bam);
+        // write the summary_per_sample to a file
+        std::fs::write(summary, summary_per_sample).expect("Unable to write file");
+    }
 }
 
 fn extract_blocks(args: &Cli, target: &utils::Reg) -> Vec<Vec<blocks::Blocks>> {
@@ -84,7 +98,7 @@ fn extract_blocks(args: &Cli, target: &utils::Reg) -> Vec<Vec<blocks::Blocks>> {
     blocks_per_bam
 }
 
-fn plot_blocks(blocks_per_bam: Vec<Vec<blocks::Blocks>>, args: Cli, target: utils::Reg) {
+fn plot_blocks(blocks_per_bam: &[Vec<blocks::Blocks>], args: &Cli, target: utils::Reg) {
     let mut plot = Plot::new();
     let default_colors = ["#1f77b4", // muted blue
         "#ff7f0e", // safety orange
@@ -96,14 +110,15 @@ fn plot_blocks(blocks_per_bam: Vec<Vec<blocks::Blocks>>, args: Cli, target: util
         "#7f7f7f", // middle gray
         "#bcbd22", // curry yellow-green
         "#17becf"];
+    let limits = if args.strict { Some((target.start, target.end)) } else { None };
     for (height, blocks) in blocks_per_bam.iter().enumerate() {
         let mut show_legend = true;
         for (block, color) in blocks.iter().zip(default_colors.iter().cycle()) {
-            plot.add_trace(block.plot(height, color.to_string(), show_legend, args.width));
+            plot.add_trace(block.plot(height, color.to_string(), show_legend, args.width, limits));
             show_legend = false;
         }
     }
-    if let Some(p) = args.bed {
+    if let Some(p) = args.bed.clone() {
         for annot_interval in annot::parse_bed(p, &target)
             .expect("Failure when parsing annotation from bed file")
             .into_iter()
@@ -125,7 +140,7 @@ fn plot_blocks(blocks_per_bam: Vec<Vec<blocks::Blocks>>, args: Cli, target: util
             .height(1000)
             .legend(Legend::new().trace_group_gap(0)),
     );
-    plot.write_html(args.output);
+    plot.write_html(args.output.clone());
 }
 
 #[cfg(test)]
@@ -154,6 +169,8 @@ fn run() {
         output: "test.html".to_string(),
         region: "chr7:152743763-156779243".to_string(),
         width: None,
+        summary: None,
+        strict: false,
     };
     run_phasius(test_cli);
 }
@@ -172,6 +189,8 @@ fn run_with_width() {
         output: "test.html".to_string(),
         region: "chr7:152743763-156779243".to_string(),
         width: Some(4),
+        summary: None,
+        strict: false,
     };
     run_phasius(test_cli);
 }
@@ -190,7 +209,69 @@ fn run_with_commas() {
         decompression: 1,
         output: "test.html".to_string(),
         region: "chr7:152,743,763-156,779,243".to_string(),
-        width: None
+        width: None,
+        summary: None,
+        strict: false,
+    };
+    run_phasius(test_cli);
+}
+
+#[test]
+fn run_with_summary() {
+    let test_cli = Cli {
+        input: vec![
+            PathBuf::from("test-data/small-test-phased.bam"),
+            PathBuf::from("test-data/small-test-phased.bam"),
+            PathBuf::from("test-data/small-test-phased.bam"),
+        ],
+        bed: None,
+        threads: 2,
+        decompression: 1,
+        output: "test.html".to_string(),
+        region: "chr7:152743763-156779243".to_string(),
+        width: None,
+        summary: Some("test_summary.txt".to_string()),
+        strict: false,
+    };
+    run_phasius(test_cli);
+}
+
+#[test]
+fn run_with_strict() {
+    let test_cli = Cli {
+        input: vec![
+            PathBuf::from("test-data/small-test-phased.bam"),
+            PathBuf::from("test-data/small-test-phased.bam"),
+            PathBuf::from("test-data/small-test-phased.bam"),
+        ],
+        bed: None,
+        threads: 2,
+        decompression: 1,
+        output: "test_strict.html".to_string(),
+        region: "chr7:152800000-156700000".to_string(),
+        width: None,
+        summary: None,
+        strict: true,
+    };
+    run_phasius(test_cli);
+}
+
+#[test]
+fn run_without_strict() {
+    let test_cli = Cli {
+        input: vec![
+            PathBuf::from("test-data/small-test-phased.bam"),
+            PathBuf::from("test-data/small-test-phased.bam"),
+            PathBuf::from("test-data/small-test-phased.bam"),
+        ],
+        bed: None,
+        threads: 2,
+        decompression: 1,
+        output: "test_without_strict.html".to_string(),
+        region: "chr7:152800000-156700000".to_string(),
+        width: None,
+        summary: None,
+        strict: false,
     };
     run_phasius(test_cli);
 }
