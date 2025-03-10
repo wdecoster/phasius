@@ -22,13 +22,15 @@ pub fn get_blocks(
 
 }
 
-fn construct_blocks<I>(mut phased_records: I, name: String) -> Vec<Blocks> 
+fn construct_blocks<I>(mut phased_records: I, name: String) -> Option<Vec<Blocks>> 
     where I: Iterator<Item = (i64, i64, Option<u32>)>
     {
     let mut phaseblocks = vec![];
-    let (mut start1, mut block_end, mut phaseset1) = phased_records
-        .next()
-        .expect(&format!("Not a single phased record found in the interval for {}!", name));
+    let (mut start1, mut block_end, mut phaseset1) = match phased_records.next() {
+        Some(record) => record,
+        None => return None, // Return None if no phased records are found
+    };
+    
     for (start, end, phaseset) in phased_records {
         if phaseset == phaseset1 {
             block_end = end;
@@ -37,6 +39,7 @@ fn construct_blocks<I>(mut phased_records: I, name: String) -> Vec<Blocks>
                 start: start1,
                 end: block_end,
                 name: name.clone(),
+                empty: false,
             });
             start1 = start;
             block_end = end;
@@ -47,9 +50,10 @@ fn construct_blocks<I>(mut phased_records: I, name: String) -> Vec<Blocks>
         start: start1,
         end: block_end,
         name,
+        empty: false,
     });
 
-    phaseblocks
+    Some(phaseblocks)
 }
 
 
@@ -67,6 +71,21 @@ fn blocks_from_bam(
     bam.fetch((tid, region.start, region.end))?;
     bam.set_threads(threads)?;
 
+    // For the name, use the basename and strip the extension. Return the full path if something goes wrong.
+    let name = bamp.file_name()
+        .and_then(|f| f.to_str())
+        .map(|s| {
+            let stem = if let Some(stem) = s.strip_suffix(".cram") {
+                stem
+            } else if let Some(stem) = s.strip_suffix(".bam") {
+                stem
+            } else {
+                s
+            };
+            stem.to_string()
+        })
+        .unwrap_or_else(|| bamp.display().to_string());
+
     let phased_reads_iter = bam
         .rc_records()
         .map(|r| r.expect("Failure parsing Bam file"))
@@ -74,7 +93,18 @@ fn blocks_from_bam(
         .map(|read| (read.pos(), read.reference_end(), get_phaseset(&read)))
         .filter(|(_, _, p)| p.is_some());
 
-    Ok(construct_blocks(phased_reads_iter, bamp.display().to_string()))
+    match construct_blocks(phased_reads_iter, name.clone()) {
+        Some(blocks) => Ok(blocks),
+        None => {
+            eprintln!("Warning: No phased records found in BAM file {}", bamp.display());
+            Ok(vec![Blocks {
+                start: 0,
+                end: 0,
+                name,
+                empty: true,
+            }])
+        }
+    }
 }
 
 fn get_phaseset(record: &bam::Record) -> Option<u32> {
@@ -97,17 +127,46 @@ fn blocks_from_vcf(
     let mut vcf = IndexedReader::from_path(vcff)?;
     let rid = vcf.header().name2rid(region.chrom.as_bytes()).expect("Failed getting rid");
 
+    // For the name, use the basename and strip the extension. Return the full path if something goes wrong.
+    let name = vcff.file_name()
+        .and_then(|f| f.to_str())
+        .map(|s| {
+            let stem = if let Some(stem) = s.strip_suffix(".vcf") {
+                stem
+            } else if let Some(stem) = s.strip_suffix(".vcf.gz") {
+                stem
+            } else {
+                s
+            };
+            stem.to_string()
+        })
+        .unwrap_or_else(|| vcff.display().to_string());
+
     vcf.fetch(rid, region.start as u64, Some(region.end as u64))
         .expect("Failed fetching region from VCF");
 
-    let phased_variants = vcf.records().map(|record| record.expect("Failed getting record from VCF")).map(|record| {
-        (record.pos(), record.end(), record.format(b"PS").integer())
-    }).filter(|(_, _, record)| record.is_ok()).map(|(start, end, record)| {
-        (start, end, Some(*record.expect("Failed getting phaseset from VCF").first().expect("Failed getting phaseset from VCF").first().expect("Failed getting phaseset from VCF") as u32))
-    });
+    let phased_variants = vcf.records()
+        .map(|record| record.expect("Failed getting record from VCF"))
+        .map(|record| {
+            (record.pos(), record.end(), record.format(b"PS").integer())
+        })
+        .filter(|(_, _, record)| record.is_ok())
+        .map(|(start, end, record)| {
+            (start, end, Some(*record.expect("Failed getting phaseset from VCF").first().expect("Failed getting phaseset from VCF").first().expect("Failed getting phaseset from VCF") as u32))
+        });
 
-
-    Ok(construct_blocks(phased_variants, vcff.display().to_string()))
+    match construct_blocks(phased_variants, name.clone()) {
+        Some(blocks) => Ok(blocks),
+        None => {
+            eprintln!("Warning: No phased records found in VCF file {}", vcff.display());
+            Ok(vec![Blocks {
+                start: 0,
+                end: 0,
+                name,
+                empty: true,
+            }])
+        }
+    }
 }
 
 #[cfg(test)]
@@ -117,7 +176,7 @@ mod tests {
     #[test]
     fn test_construct_blocks() {
         let phased_records = vec![(1, 2, Some(1)), (3, 4, Some(1)), (5, 6, Some(2)), (7, 8, Some(2))];
-        let blocks = construct_blocks(phased_records.into_iter(), "test".to_string());
+        let blocks = construct_blocks(phased_records.into_iter(), "test".to_string()).unwrap();
         assert_eq!(blocks.len(), 2);
         assert_eq!(blocks[0].start, 1);
         assert_eq!(blocks[0].end, 4);
