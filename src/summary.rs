@@ -4,10 +4,14 @@ use crate::blocks::Blocks;
 // with their start and end positions
 // the end result is a tab-separated file with the following format:
 // Sample_name\tnum_blocks\tstart1-end1;start2-end2;...;startN-endN\n
-pub fn summarize(blocks: &Vec<Vec<Blocks>>) -> String {
+pub fn summarize(blocks: &[Vec<Blocks>]) -> String {
     let mut summary = String::new();
     for blocks in blocks.iter() {
         let name = String::from(&blocks[0].name);
+        if blocks[0].empty {
+            summary.push_str(&format!("{}\t0\t0\n", name));
+            continue;
+        }
         let num_blocks = blocks.len();
         let blocks = blocks
             .iter()
