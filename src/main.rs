@@ -51,7 +51,7 @@ struct Cli {
     summary: Option<String>,
 
     /// strictly plot the begin and end of the specified interval, not the whole interval gathered from blocks
-    #[clap(long, default_value_t = false)]
+    #[clap(long)]
     strict: bool,
 }
 
@@ -274,4 +274,49 @@ fn run_without_strict() {
         strict: false,
     };
     run_phasius(test_cli);
+}
+
+#[test]
+fn run_with_empty_blocks() {
+    use crate::blocks::Blocks;
+    
+    let test_cli = Cli {
+        input: vec![
+            PathBuf::from("test-data/small-test-phased.bam"),
+            PathBuf::from("test-data/small-test-phased.bam"),
+        ],
+        bed: None,
+        threads: 2,
+        decompression: 1,
+        output: "test_with_empty_blocks.html".to_string(),
+        region: "chr7:152800000-156700000".to_string(),
+        width: None,
+        summary: Some("test_empty_blocks_summary.txt".to_string()),
+        strict: false,
+    };
+    
+    // Extract blocks from BAM files
+    let target = utils::process_region(&test_cli.region).expect("Error: Improper interval!");
+    let mut blocks_per_bam = extract_blocks(&test_cli, &target);
+    
+   
+    // Add a single empty block
+    blocks_per_bam.push(vec![
+        Blocks {
+            start: 0,
+            end: 0,
+            name: "test-data/empty-test.bam".to_string(),
+            empty: true,
+        }
+    ]);
+    
+    // Test plotting
+    plot_blocks(&blocks_per_bam, &test_cli, target);
+    
+    // Test summarizing
+    let summary_per_sample = summary::summarize(&blocks_per_bam);
+    std::fs::write(test_cli.summary.unwrap(), summary_per_sample).expect("Unable to write file");
+    
+    // Verify the summary file was created
+    assert!(std::path::Path::new("test_empty_blocks_summary.txt").exists());
 }
