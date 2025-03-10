@@ -111,7 +111,7 @@ fn plot_blocks(blocks_per_bam: &[Vec<blocks::Blocks>], args: &Cli, target: utils
         "#bcbd22", // curry yellow-green
         "#17becf"];
     let limits = if args.strict { Some((target.start, target.end)) } else { None };
-    for (height, blocks) in blocks_per_bam.iter().enumerate() {
+    for (height, blocks) in blocks_per_bam.iter().filter(|blocks| !blocks[0].empty).enumerate() {
         let mut show_legend = true;
         for (block, color) in blocks.iter().zip(default_colors.iter().cycle()) {
             plot.add_trace(block.plot(height, color.to_string(), show_legend, args.width, limits));
