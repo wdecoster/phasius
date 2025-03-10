@@ -18,6 +18,8 @@ impl Blocks {
         limits: Option<(u32, u32)>,
     ) -> Box<plotly::Scatter<i64, usize>> {
         if self.empty {
+            // in the current implementation, empty blocks are not plotted, as they are filtered out before the call to .plot()
+            // however, I will leave this in, as things might change in the future
             return Scatter::new(vec![], vec![]);
         }
         // with limits, the start of the plot cannot be less than the lower limit
