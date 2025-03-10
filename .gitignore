@@ -3,3 +3,5 @@ test.html
 test_strict.html
 test_without_strict.html
 test_summary.txt
+test_with_empty_blocks.html
+test_empty_blocks_summary.txt
