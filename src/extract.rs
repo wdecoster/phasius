@@ -22,9 +22,13 @@ pub fn get_blocks(
 
 }
 
-fn construct_blocks<I>(mut phased_records: I, name: String) -> Option<Vec<Blocks>> 
-    where I: Iterator<Item = (i64, i64, Option<u32>)>
+fn construct_blocks<I>(phased_records: I, name: String) -> Option<Vec<Blocks>> 
+    where I: Iterator<Item = (i64, i64, u32)>
     {
+    // first, sort the phased records by phaseset, then by start position
+    let mut phased_records: Vec<_> = phased_records.collect();
+    phased_records.sort_by_key(|&(start, _, phaseset)| (phaseset, start));
+    let mut phased_records = phased_records.into_iter();
     let mut phaseblocks = vec![];
     let (mut start1, mut block_end, mut phaseset1) = match phased_records.next() {
         Some(record) => record,
@@ -91,7 +95,8 @@ fn blocks_from_bam(
         .map(|r| r.expect("Failure parsing Bam file"))
         .filter(|read| read.flags() & (htslib::BAM_FUNMAP | htslib::BAM_FSECONDARY) as u16 == 0)
         .map(|read| (read.pos(), read.reference_end(), get_phaseset(&read)))
-        .filter(|(_, _, p)| p.is_some());
+        .filter(|(_, _, p)| p.is_some())
+        .map(|(start, end, p)| (start, end, p.unwrap()));
 
     match construct_blocks(phased_reads_iter, name.clone()) {
         Some(blocks) => Ok(blocks),
@@ -153,7 +158,8 @@ fn blocks_from_vcf(
         .filter(|(_, _, record)| record.is_ok())
         .map(|(start, end, record)| {
             (start, end, Some(*record.expect("Failed getting phaseset from VCF").first().expect("Failed getting phaseset from VCF").first().expect("Failed getting phaseset from VCF") as u32))
-        });
+        }).filter(|(_, _, phaseset)| phaseset.is_some())
+        .map(|(start, end, phaseset)| (start, end, phaseset.unwrap()));
 
     match construct_blocks(phased_variants, name.clone()) {
         Some(blocks) => Ok(blocks),
@@ -175,7 +181,7 @@ mod tests {
 
     #[test]
     fn test_construct_blocks() {
-        let phased_records = vec![(1, 2, Some(1)), (3, 4, Some(1)), (5, 6, Some(2)), (7, 8, Some(2))];
+        let phased_records = vec![(1, 2, 1), (3, 4, 1), (5, 6, 2), (7, 8, 2)];
         let blocks = construct_blocks(phased_records.into_iter(), "test".to_string()).unwrap();
         assert_eq!(blocks.len(), 2);
         assert_eq!(blocks[0].start, 1);
