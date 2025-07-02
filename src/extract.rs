@@ -30,10 +30,7 @@ fn construct_blocks<I>(phased_records: I, name: String) -> Option<Vec<Blocks>>
     phased_records.sort_by_key(|&(start, _, phaseset)| (phaseset, start));
     let mut phased_records = phased_records.into_iter();
     let mut phaseblocks = vec![];
-    let (mut start1, mut block_end, mut phaseset1) = match phased_records.next() {
-        Some(record) => record,
-        None => return None, // Return None if no phased records are found
-    };
+    let (mut start1, mut block_end, mut phaseset1) = phased_records.next()?;
     
     for (start, end, phaseset) in phased_records {
         if phaseset == phaseset1 {
