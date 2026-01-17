@@ -11,16 +11,25 @@ pub mod utils;
 pub mod blocks;
 pub mod summary;
 
+fn validate_file_exists(path: &str) -> Result<PathBuf, String> {
+    let path = PathBuf::from(path);
+    if path.exists() && path.is_file() {
+        Ok(path)
+    } else {
+        Err(format!("File '{}' does not exist or is not a file", path.display()))
+    }
+}
+
 // The arguments end up in the Cli struct
 #[derive(Parser, Debug)]
 #[command(author, version, about="Tool to draw a map of phaseblocks across crams/bams", long_about = None)]
 struct Cli {
     /// cram or bam files to check
-    #[arg(required = true, value_parser = clap::value_parser!(PathBuf), value_name = "FILE")]
+    #[arg(required = true, value_parser = validate_file_exists, value_name = "FILE")]
     input: Vec<PathBuf>,
 
     /// bed file annotation to use (bgzipped and tabix indexed)
-    #[arg(short, long, value_parser = clap::value_parser!(PathBuf))]
+    #[arg(short, long, value_parser = validate_file_exists)]
     bed: Option<PathBuf>,
 
     /// Number of crams/bams to parse in parallel
