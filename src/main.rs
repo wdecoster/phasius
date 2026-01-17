@@ -84,18 +84,20 @@ fn run_phasius(args: Cli) {
 
 fn extract_blocks(args: &Cli, target: &utils::Reg) -> Vec<Vec<blocks::Blocks>> {
     let input = args.input.clone();
-    rayon::ThreadPoolBuilder::new()
+    let pool = rayon::ThreadPoolBuilder::new()
         .num_threads(args.threads)
         .build()
         .unwrap();
-    let blocks_per_bam: Vec<Vec<blocks::Blocks>> = input
-        .into_par_iter()
-        .map(|b| {
-            extract::get_blocks(&b, args.decompression, target)
-                .expect("Failure when parsing region from bam file.")
-        })
-        .collect();
-    blocks_per_bam
+    
+    pool.install(|| {
+        input
+            .into_par_iter()
+            .map(|b| {
+                extract::get_blocks(&b, args.decompression, target)
+                    .expect("Failure when parsing region from bam file.")
+            })
+            .collect()
+    })
 }
 
 fn plot_blocks(blocks_per_bam: &[Vec<blocks::Blocks>], args: &Cli, target: utils::Reg) {
