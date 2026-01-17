@@ -1,4 +1,3 @@
-use clap::AppSettings::DeriveDisplayOrder;
 use clap::Parser;
 use log::info;
 use plotly::layout::{Axis, Legend};
@@ -14,54 +13,43 @@ pub mod summary;
 
 // The arguments end up in the Cli struct
 #[derive(Parser, Debug)]
-#[structopt(global_settings=&[DeriveDisplayOrder])]
-#[clap(author, version, about="Tool to draw a map of phaseblocks across crams/bams", long_about = None)]
+#[command(author, version, about="Tool to draw a map of phaseblocks across crams/bams", long_about = None)]
 struct Cli {
     /// cram or bam files to check
-    // this validator gets applied to each element from the Vec separately
-    #[clap(parse(from_os_str), multiple_values = true, required = true, validator=is_file)]
+    #[arg(required = true, value_parser = clap::value_parser!(PathBuf), value_name = "FILE")]
     input: Vec<PathBuf>,
 
     /// bed file annotation to use (bgzipped and tabix indexed)
-    #[clap(short, long, parse(from_os_str), validator=is_file)]
+    #[arg(short, long, value_parser = clap::value_parser!(PathBuf))]
     bed: Option<PathBuf>,
 
     /// Number of crams/bams to parse in parallel
-    #[clap(short, long, value_parser, default_value_t = 4)]
+    #[arg(short, long, default_value_t = 4)]
     threads: usize,
 
     /// Number of decompression threads to use per cram/bam
-    #[clap(short, long, value_parser, default_value_t = 1)]
+    #[arg(short, long, default_value_t = 1)]
     decompression: usize,
 
     /// HTML output file name
-    #[clap(short, long, value_parser)]
+    #[arg(short, long)]
     output: String,
 
     /// region string to plot phase blocks from
-    #[clap(short, long, value_parser)]
+    #[arg(short, long)]
     region: String,
 
     /// line width
-    #[clap(short, long, value_parser)]
+    #[arg(short, long)]
     width: Option<usize>,
 
     /// summary file
-    #[clap(long, value_parser)]
+    #[arg(long)]
     summary: Option<String>,
 
     /// strictly plot the begin and end of the specified interval, not the whole interval gathered from blocks
-    #[clap(long)]
+    #[arg(long)]
     strict: bool,
-}
-
-fn is_file(pathname: &str) -> Result<(), String> {
-    let path = PathBuf::from(pathname);
-    if path.is_file() {
-        Ok(())
-    } else {
-        Err(format!("Input file {} is invalid", path.display()))
-    }
 }
 
 fn main() {
