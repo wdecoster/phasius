@@ -19,7 +19,7 @@ env_logger = "0.11.8"
 log = "0.4.29"
 plotly = "0.14.0"
 rayon = "1.11.0"
-rust-htslib = "0.51.0"
+rust-htslib = { git = "https://github.com/wdecoster/rust-htslib.git" }
 unzip-n = "0.1.4"
 
 [dev-dependencies]

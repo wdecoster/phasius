@@ -1,4 +1,4 @@
-use plotly::common::{Marker, Mode, Line};
+use plotly::common::{Line, Marker, Mode};
 use plotly::Scatter;
 
 pub struct Blocks {
@@ -30,23 +30,19 @@ impl Blocks {
             (self.start, self.end)
         };
         match width {
-            Some(width) => {
-        Scatter::new(vec![start, end], vec![height, height])
-            .mode(Mode::Lines)
-            .name(&self.name)
-            .legend_group(&self.name)
-            .show_legend(show_legend)
-            .line(Line::new().width(width as f64))
-            .marker(Marker::new().color(color))
-            },
-            None => {
-        Scatter::new(vec![start, end], vec![height, height])
-            .mode(Mode::Lines)
-            .name(&self.name)
-            .legend_group(&self.name)
-            .show_legend(show_legend)
-            .marker(Marker::new().color(color))
-            },
+            Some(width) => Scatter::new(vec![start, end], vec![height, height])
+                .mode(Mode::Lines)
+                .name(&self.name)
+                .legend_group(&self.name)
+                .show_legend(show_legend)
+                .line(Line::new().width(width as f64))
+                .marker(Marker::new().color(color)),
+            None => Scatter::new(vec![start, end], vec![height, height])
+                .mode(Mode::Lines)
+                .name(&self.name)
+                .legend_group(&self.name)
+                .show_legend(show_legend)
+                .marker(Marker::new().color(color)),
         }
     }
 }

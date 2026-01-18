@@ -54,7 +54,10 @@ mod tests {
     fn test_process_region_invalid_end_before_start() {
         let result = process_region("chr1:2000-1000");
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("begin has to be smaller than end"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("begin has to be smaller than end"));
     }
 
     #[test]

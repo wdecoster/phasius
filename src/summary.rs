@@ -6,10 +6,10 @@ use crate::blocks::Blocks;
 // Sample_name\tnum_blocks\tstart1-end1;start2-end2;...;startN-endN\n
 pub fn summarize(blocks: &[Vec<Blocks>]) -> String {
     let mut summary = String::new();
-    
+
     // Add header line
     summary.push_str("sample_name\tnum_blocks\tblock_coordinates\n");
-    
+
     for blocks in blocks.iter() {
         let name = String::from(&blocks[0].name);
         if blocks[0].empty {
@@ -38,7 +38,7 @@ mod tests {
             name: "sample1".to_string(),
             empty: false,
         }]];
-        
+
         let result = summarize(&blocks);
         let lines: Vec<&str> = result.lines().collect();
         assert_eq!(lines.len(), 2); // header + 1 sample
@@ -62,7 +62,7 @@ mod tests {
                 empty: false,
             },
         ]];
-        
+
         let result = summarize(&blocks);
         let lines: Vec<&str> = result.lines().collect();
         assert_eq!(lines.len(), 2);
@@ -85,7 +85,7 @@ mod tests {
                 empty: false,
             }],
         ];
-        
+
         let result = summarize(&blocks);
         let lines: Vec<&str> = result.lines().collect();
         assert_eq!(lines.len(), 3); // header + 2 samples
@@ -101,7 +101,7 @@ mod tests {
             name: "sample_empty".to_string(),
             empty: true,
         }]];
-        
+
         let result = summarize(&blocks);
         let lines: Vec<&str> = result.lines().collect();
         assert_eq!(lines.len(), 2);
@@ -124,7 +124,7 @@ mod tests {
                 empty: true,
             }],
         ];
-        
+
         let result = summarize(&blocks);
         let lines: Vec<&str> = result.lines().collect();
         assert_eq!(lines.len(), 3);
