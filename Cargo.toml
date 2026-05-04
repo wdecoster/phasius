@@ -23,7 +23,7 @@ rust-htslib = { git = "https://github.com/wdecoster/rust-htslib.git" }
 unzip-n = "0.1.4"
 
 [dev-dependencies]
-ctor = "0.8.0"
+ctor = "0.12.0"
 
 [profile.release]
 strip = true  # Automatically strip symbols from the binary.
